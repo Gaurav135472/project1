@@ -51,7 +51,6 @@ def load_overall_analysis():
     df['date'] = pd.to_datetime(df['date'], errors='coerce')
     df['year'] = df['date'].dt.year
     df['month'] = df['date'].dt.month
-    
     plt.close('all')
 
     if selected_type == 'MoM startup Number':
@@ -59,11 +58,13 @@ def load_overall_analysis():
         temp_df = df.groupby(['year', 'month'])['startup'].size().reset_index()
         temp_df['x_axis'] = temp_df['month'].astype(str) + '-' + temp_df['year'].astype(str)
 
-        # Create the plot
+            # Create the plot
         fig4, ax4 = plt.subplots()
         ax4.plot(temp_df['x_axis'], temp_df['startup'])
         ax4.set_xlabel('Month-Year')
         ax4.set_ylabel('Startup Count')
+        ax4.tick_params(axis='x',which='both', labelsize=6, rotation=90)
+        fig4.tight_layout()
         st.pyplot(fig4)
 
     else:
@@ -76,18 +77,34 @@ def load_overall_analysis():
         ax4.plot(temp_df2['x_axis'], temp_df2['amount'])
         ax4.set_xlabel('Month-Year')
         ax4.set_ylabel('Investment Amount')
+        ax4.tick_params(axis='x',which='both', labelsize=6, rotation=90)
         st.pyplot(fig4)
-    # temp_df2[['amount', 'x_axis']]
 
-    
+    col1, col2 = st.columns(2)
+    with col1:
+    # top startup
 
+        temp_df = df.groupby('year').max()
+        fig, ax = plt.subplots()
+        ax.bar(temp_df.index, temp_df['amount'])
+        ax.set_title('Top Investment in Each Year')
+        ax.set_xlabel('Years')
+        ax.set_ylabel('Amount')
+        st.pyplot(fig)
 
+    with col2:
+        # creating the pie chart on the sectors 
+        temp_df = df.groupby('vertical').size().sort_values(ascending=False).head(10)
+        fig5, ax5 = plt.subplots()
+        ax5.pie(temp_df, labels=temp_df.index, autopct='%0.01f%%')
+        ax5.set_title('Sector wise Investment')
+        plt.tight_layout()
+        st.pyplot(fig5)
 
 def load_investor_detail(investor):
     st.title(investor)
 
     # load recent five investment of the investor
-
     last5_df = df[df['investors'].str.contains(investor)].head()[['date','startup','vertical','city','round','amount']]
     st.subheader('Most Recent Investments')
     st.write("Amount in Million USD")
@@ -154,14 +171,10 @@ def load_investor_detail(investor):
 
 st.sidebar.title('Startup Funding Analysis')
 
-option = st.sidebar.selectbox('Select One', ['Overall Analysis', 'Startup', 'Investor'])
+option = st.sidebar.selectbox('Select One', ['Overall Analysis', 'Investor'])
 
 if option == 'Overall Analysis':
         load_overall_analysis()
-elif option == 'Startup':
-    st.sidebar.selectbox('Select Startup', sorted(df['startup'].unique().tolist()))
-    btn1 = st.sidebar.button("Find startup Detail")
-    st.title("Startup Analysis")
 elif option == 'Investor':
     selected_investor = st.sidebar.selectbox('Select Investor', sorted(sorted(set(df['investors'].str.split(',').sum()))))
     btn2 = st.sidebar.button('Find Investor Detail')
